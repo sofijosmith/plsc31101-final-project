@@ -1,0 +1,74 @@
+---
+title: "Narrative"
+author: "Sofia Smith"
+date: "12/9/2019"
+output: html_document
+---
+
+## Project Goals
+
+Maraji, or sources of emulation, are high ranking Islamic scholars who serve as jurists and interpreters of religious text, participating both high-level theological debate and providing guidance on quotidian issues. I scraped the websites of the four major Maraji in Iraq: Ali al Sistani, Bashir al Najafy, Muhammad Saeed al Hakeem, and Muhammad Al Fayadh,specifically on the question and answer pages, wherein Muslims submit questions they encounter in their day to day lives. 
+
+Once scraped, I want to determine which questions pertain to women and gender, and how content differs between English and Arabic. Generally, I hope to get a sense of how the questions submitted and answered relate to these Ayatollah's previous larger bodies of scholarship and pronouncements about women and gender. 
+
+## Webscraping
+The website for Ayatollahs Sistani and Hakeem went relatively smoothly, and I was able to pull all their data for Questions and Answers. Although I initially planned to also pull the "topic" section for each of them as well, it quickly became clear after some initial searches that this would distort easy categorization as much as it would clarify (ie finding rulings on abortion tagged in cleanliness rather than under abortion). Although in some cases it may be illuminating to understand if these "mistakes" in categorization represent specific choices or understandings of various terms, for the purpose of this project and based on the general untidyness of the websites, I chose to ignore them. 
+
+The website for Ayatollah Najafy posed greater challenges. The pages were embedded in each other with no clear pattern to their URLs nor an easy way to retrieve a full list of URLS (unlike the 'link trees' that were available for Sistani and Hakeem). I went through the pages by hand and compiled a vector of all the links. Unfortunately, some of these links had some issues, so I had to go through and "comment" them out. Once I received the data I had to perform some initial cleaning in order to separate it into a useable data frame with both questions and answers separately. Some of the questions include sub-questions, (part 1, 2, etc) that were also answered according to the subtopic. Ideally, going forward I would like to figure out how to split these up, but none of my attempts could successfully split both the Question and Answer columns into rows without messing up their order. Additionally, Ayatollah Najafy does not have English language Questions and Answers, so I was only able to retrieve Arabic. 
+
+Unfortunately, the website for Al Fayadh was down and could not be retrieved. 
+
+I ended up with two English language and three Arabic language data frames of questions and answers. At this stage, I encountered few differences between working with English and Arabic, other than encoding the final csvs of raw data, included below:
+
+write.csv(Hakeem_ar, "C:\\Users\\sofia\\Desktop\\SJS_PLSC31101_Final\\data\\Hakeem_AR_raw.csv", fileEncoding = "UTF-8")
+
+
+## Cleaning data
+While cleaning my data I removed excess words (such as Question: and Answer:) and other residual characters. I also added a column that indicated who was speaking. I then merged them into one Arabic and one English language data frame of questions and answers. 
+
+One of my first challenges came in reading in the new Arabic language csvs. I had to use the "reader" package, and the accompanying function (shown below). Once I began manipulating Arabic, I had to set my locale.
+
+Other than those two discoveries, the other issues arose from Arabic were not dissimilar to other left-right issues that emerge when editing Arabic (ie issues with text orientation, problems with line spacing, and punctuation jumping around) with some patience and working in other text editing programs, I was able to just copy and paste into R. However, I still have not discovered how to change text orientation in R. 
+
+Sys.setlocale("LC_CTYPE", "arabic")
+
+library(reader)
+Hakeem_EN <- read.csv(file = "data/Hakeem_EN_raw.csv", stringsAsFactors = F)
+
+Sis_AR <- read_csv("data/Sisitani_AR_raw.csv")
+
+## Gendered Content
+I developed a dictionary of gendered terms that included both religiously focused terms (such as "maher", a specific term for dowery) as well as more straightforward terms that either directly or indirectly signify women and gender (she, family, home). For English, I simply used str_match to determine which words occurred in which questions or answers and then deleted rows that did not contain these terms in either questions or answers. The str_match function displays the words that match, which creates a helpful guide to at least beginning to understand the topics covered.
+
+For Arabic, I could not use str_match, which does not appear to work with Arabic, and had trouble adapting grep to only match for a single word value as opposed to reprinting the entire question. As a result, I used a probably over-complicated duo of functions that first determined whether a string exists in a document and then prints either a 1 or 0. I created a "gender score" and deleted all rows that contained a gender score of 0 (no gendered content in either questions or answers). Unfortunately, with this somewhat clunky method I was unable to get a new column of "gendered terms" per question/answer, and so had fewer signposts to determine topics. 
+
+When I validated my results against a set of hand-coded questions and answers, it became clear that I needed to have an even more context-specific dictionary (for example included menstruation or specific types of rights like female initiated divorce), and have them vary between English and Arabic (for example, "she" or "her" gave false positives in English while in Arabic their equivalent pronouns proved initially useful). Ultimately the dictionaries below gave me the best results.
+
+GenderedEN <- c("woman", "women", "feminine", "female", "home", "marriage", 
+             "divorce", "khul", "maher", "mahr", "family",  "abortion","pregnancy",  
+             "menstration", "hijab", "niqab", "modesty", "shy", "shyness", "wife",
+             "wives", "engagement", "widow", "mother", "daughter", "dowry",
+             "adultery", "zina")
+
+GenderedAR <- c("مرأة", "نساء", "نسوية", "زوجة", "زوجات", "طلاق", "مهر", "ارمل
+                ة", "عائلة", "أم", "بنت", "ابنة", "حيض", "طمث", "عدة", "نفاس", "حامل",
+                "ولادة", "إجهاض", "أطفال", "مرضعة", "حجاب", "خمار", "نقاب", "احتشام", "
+                حشمة", "حياء", "سن اليأس")
+
+
+## Analysis
+Setting out, my goal was to determine what issues on these forums discussed women and gender, who was asking questions, and how this output differed between English and Arabic. Ultimately, because of the issues, I encountered in terms of topic selection (both retrieving it from the website as well as generating my own mini topic model with the dictionary) a robust analysis of thematic content is impossible at this time. However, an initial read-through of the content reveals a few interesting findings. First is the sheer difference in the quantity of gendered content in Arabic (between 40-45% depending on the dictionary used) versus English (15-2%). Second, in Arabic, a greater number of responses relate to issues of ritual cleanliness or other doctrinal issues, whereas in English the responses primarily refer to issues of marriage and motherhood. 
+
+Another question that interested me was who asked these questions, were they coming from women themselves or were men asking for the women in their households? Unfortunately, as the grammar of questions varied from page to page (Ayatollahs Sistani and Najafy rephrase questions to make them more generalizable), this was also impossible. 
+
+Despite not coming away with my initial research questions answered, this data set has tremendous value. At less than 600 questions, the English language gendered questions list can be navigated manageably. While Arabic contains nearly 3,000 questions and no guiding words to help delineate topics, it remains slightly more cumbersome. However, I will move forward with a deep reading of these topics. 
+
+
+## Future research
+
+Going forward, I hope to develop a better way to determine the topics covered and to return to my initial research question. Some could be answered with a better understanding of how different functions interact with Arabic characters (ie how to better utilize simple functions like grep). I would also be interested in doing topic modeling, as my dictionary certainly influenced the results. 
+
+One larger question that arose concerned the efficacy of using a stemmer with Arabic> The most popular (arabicStemmR), removes diacritic marks, prefixes, and suffixes that not only remove many markers of gender, but can result in incorrect removal, ambiguity over proper vocalization, or the elimination of alternate stemming outputs. Some stemmers (such as SAFAR) claim to have overcome these hurdles, but at this point, I do not know enough to comment on their quality. I hope to learn more going forward. 
+
+I also encountered issues getting this document because of issues with encoding, hence why the bits of "code" not being in chunks. In future, I will need to find a more elegant solution. 
+
